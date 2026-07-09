@@ -135,14 +135,15 @@ function TrainCard({ train, from, to, date, onSelect, index }) {
   }, [index])
 
   return (
-    <div ref={cardRef} className="invisible group bg-white border border-black/[0.06] rounded-2xl p-6 hover:border-brand-500/20 transition-all duration-400 hover:shadow-md">
+    <div ref={cardRef} className="invisible group bg-white border border-black/[0.06] rounded-2xl p-5 sm:p-6 hover:border-brand-500/20 transition-all duration-400 hover:shadow-md">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <h4 className="text-lg font-medium text-content-primary">{train.name}</h4>
+      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-5">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mb-1">
+            <h4 className="text-base sm:text-lg font-medium text-content-primary">{train.name}</h4>
             <span className="text-xs text-content-muted">#{train.number}</span>
           </div>
+
           <span className="inline-flex items-center gap-1.5 text-xs text-brand-500 font-medium bg-brand-50 px-2.5 py-0.5 rounded-full">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="4" y="3" width="16" height="16" rx="3" /><path d="M4 11h16" /></svg>
             Train
@@ -173,16 +174,17 @@ function TrainCard({ train, from, to, date, onSelect, index }) {
       {/* Classes */}
       <div className="space-y-2">
         {train.classes.map((cls) => (
-          <div key={cls.type} className="flex items-center justify-between gap-3 py-3 px-4 rounded-xl bg-surface-overlay/60 border border-black/[0.03] hover:border-black/[0.06] transition-all duration-300">
-            <div className="flex items-center gap-3">
+          <div key={cls.type} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 rounded-xl bg-surface-overlay/60 border border-black/[0.03] hover:border-black/[0.06] transition-all duration-300">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className="text-sm text-content-primary font-medium min-w-[5.5rem]">{cls.type}</span>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full text-accent-600 bg-accent-50">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent-500 animate-pulse" />
                 Live status on inquiry
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between sm:justify-end gap-4">
               <div className="text-right">
+
                 <span className="text-base font-semibold text-content-primary tabular-nums">₹{cls.fare.toLocaleString('en-IN')}</span>
                 <span className="block text-[0.65rem] text-content-muted font-light">indicative fare</span>
               </div>
@@ -219,14 +221,15 @@ function BusCard({ bus, from, to, date, onSelect, index }) {
   }, [index])
 
   return (
-    <div ref={cardRef} className="invisible group bg-white border border-black/[0.06] rounded-2xl p-6 hover:border-accent-400/20 transition-all duration-400 hover:shadow-md">
+    <div ref={cardRef} className="invisible group bg-white border border-black/[0.06] rounded-2xl p-5 sm:p-6 hover:border-accent-400/20 transition-all duration-400 hover:shadow-md">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div>
+      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-5">
+        <div className="min-w-0">
           <div className="flex items-center gap-2.5 mb-1">
-            <h4 className="text-lg font-medium text-content-primary">{bus.operator}</h4>
+            <h4 className="text-base sm:text-lg font-medium text-content-primary">{bus.operator}</h4>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+
             <span className="inline-flex items-center gap-1.5 text-xs text-accent-600 font-medium bg-accent-50 px-2.5 py-0.5 rounded-full">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="14" rx="3" /><path d="M3 10h18" /></svg>
               Bus
@@ -257,15 +260,16 @@ function BusCard({ bus, from, to, date, onSelect, index }) {
       </div>
 
       {/* Action row */}
-      <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-overlay/60 border border-black/[0.03]">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 px-4 rounded-xl bg-surface-overlay/60 border border-black/[0.03]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <span className="inline-flex items-center gap-1.5 text-xs text-accent-600 bg-accent-50 px-2.5 py-0.5 rounded-full font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-accent-500 animate-pulse" />
             Live seats on inquiry
           </span>
           <span className="text-xs text-content-muted">{bus.type}</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between sm:justify-end gap-4">
+
           <div className="text-right">
             <span className="text-base font-semibold text-content-primary tabular-nums">₹{bus.fare.toLocaleString('en-IN')}</span>
             <span className="block text-[0.65rem] text-content-muted font-light">indicative fare</span>
