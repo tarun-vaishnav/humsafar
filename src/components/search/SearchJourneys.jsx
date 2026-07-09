@@ -44,7 +44,14 @@ function SearchLoading() {
 
 // ─── Empty state ────────────────────────────────────────────────────────────
 function EmptyState({ from, to }) {
-  const routes = useMemo(() => SearchService.getAvailableRoutes(), [])
+  const [routes, setRoutes] = useState([])
+
+  useEffect(() => {
+    let alive = true
+    SearchService.getAvailableRoutes().then((r) => { if (alive) setRoutes(r) })
+    return () => { alive = false }
+  }, [])
+
 
   return (
     <div className="py-20 text-center">

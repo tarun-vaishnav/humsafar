@@ -116,7 +116,33 @@ model TrainRecord {
   @@index([active])
 }
 
+// ─── Bus Records (admin-managed "live" inventory) ───────────────────────────
+
+model BusRecord {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Route key parts (city ids/codes, e.g. "DEL" → "JAI")
+  fromCode String
+  toCode   String
+
+  operator  String // e.g. "RSRTC Volvo"
+  busType   String // e.g. "AC Sleeper" | "Volvo Multi-Axle"
+  departure String // "06:00"
+  arrival   String // "11:30"
+  duration  String // "5h 30m"
+  fare      Int // INR
+  seats     Int    @default(0) // seats available
+
+  active Boolean @default(true)
+
+  @@index([fromCode, toCode])
+  @@index([active])
+}
+
 // ─── Admin Users ────────────────────────────────────────────────────────────
+
 
 model AdminUser {
   id           String   @id @default(cuid())

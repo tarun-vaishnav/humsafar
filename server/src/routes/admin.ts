@@ -6,7 +6,10 @@ import {
   changePasswordSchema,
   trainRecordSchema,
   trainRecordUpdateSchema,
+  busRecordSchema,
+  busRecordUpdateSchema,
 } from '../lib/validation.js'
+
 import { sendStatusUpdate } from '../lib/email.js'
 
 import {
@@ -345,6 +348,79 @@ export async function adminRoutes(app: FastifyInstance) {
     })
     return { success: true }
   })
+
+  // ─── Bus records: list ────────────────────────────────────────────────
+  app.get('/buses', { preHandler: requireAdmin }, async (request) => {
+    const q = request.query as Record<string, string | undefined>
+    const where: Record<string, unknown> = {}
+    if (q.from) where.fromCode = q.from.toUpperCase()
+    if (q.to) where.toCode = q.to.toUpperCase()
+    if (q.active === 'true') where.active = true
+    if (q.active === 'false') where.active = false
+    if (q.search) {
+      const s = q.search.slice(0, 60)
+      where.OR = [
+        { operator: { contains: s, mode: 'insensitive' } },
+        { busType: { contains: s, mode: 'insensitive' } },
+      ]
+    }
+
+    const items = await prisma.busRecord.findMany({
+      where,
+      orderBy: [{ fromCode: 'asc' }, { toCode: 'asc' }, { departure: 'asc' }],
+      take: 500,
+    })
+    return { success: true, total: items.length, items }
+  })
+
+  // ─── Bus records: create ──────────────────────────────────────────────
+  app.post('/buses', { preHandler: requireAdmin }, async (request, reply) => {
+    const parsed = busRecordSchema.safeParse(request.body ?? {})
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]
+      return reply.status(400).send({ success: false, error: 'validation_failed', message: first?.message })
+    }
+    const { active, seats, ...rest } = parsed.data
+    const created = await prisma.busRecord.create({
+      data: { ...rest, seats: seats ?? 0, active: active ?? true },
+    })
+    await prisma.activityLog.create({
+      data: { adminId: request.admin!.sub, action: 'BUS_CREATE', details: `${created.operator} ${created.fromCode}-${created.toCode}` },
+    })
+    return reply.status(201).send({ success: true, bus: created })
+  })
+
+  // ─── Bus records: update ──────────────────────────────────────────────
+  app.patch('/buses/:id', { preHandler: requireAdmin }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const parsed = busRecordUpdateSchema.safeParse(request.body ?? {})
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]
+      return reply.status(400).send({ success: false, error: 'validation_failed', message: first?.message })
+    }
+    const existing = await prisma.busRecord.findUnique({ where: { id } })
+    if (!existing) return reply.status(404).send({ success: false, error: 'not_found' })
+
+    const updated = await prisma.busRecord.update({ where: { id }, data: parsed.data })
+    await prisma.activityLog.create({
+      data: { adminId: request.admin!.sub, action: 'BUS_UPDATE', details: `${updated.operator}` },
+    })
+    return { success: true, bus: updated }
+  })
+
+  // ─── Bus records: delete (hard) ───────────────────────────────────────
+  app.delete('/buses/:id', { preHandler: requireAdmin }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const existing = await prisma.busRecord.findUnique({ where: { id } })
+    if (!existing) return reply.status(404).send({ success: false, error: 'not_found' })
+
+    await prisma.busRecord.delete({ where: { id } })
+    await prisma.activityLog.create({
+      data: { adminId: request.admin!.sub, action: 'BUS_DELETE', details: `${existing.operator} ${existing.fromCode}-${existing.toCode}` },
+    })
+    return { success: true }
+  })
 }
+
 
 

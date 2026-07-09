@@ -409,8 +409,160 @@ function TrainManager() {
   )
 }
 
+// ─── Bus manager ────────────────────────────────────────────────────────
+const emptyBus = () => ({ fromCode: '', toCode: '', operator: '', busType: '', departure: '', arrival: '', duration: '', fare: '', seats: '', active: true })
+
+function BusForm({ initial, onSave, onCancel, saving }) {
+  const [form, setForm] = useState(initial)
+  const [error, setError] = useState(null)
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const submit = () => {
+    setError(null)
+    const payload = {
+      fromCode: form.fromCode.trim().toUpperCase(),
+      toCode: form.toCode.trim().toUpperCase(),
+      operator: form.operator.trim(),
+      busType: form.busType.trim(),
+      departure: form.departure.trim(),
+      arrival: form.arrival.trim(),
+      duration: form.duration.trim(),
+      fare: Number(form.fare) || 0,
+      seats: Number(form.seats) || 0,
+      active: form.active,
+    }
+    if (!payload.operator) { setError('Operator name is required.'); return }
+    if (!payload.busType) { setError('Bus type is required.'); return }
+    onSave(payload, setError)
+  }
+
+  const inputCls = 'w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-brand-500'
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">From code</label><input value={form.fromCode} onChange={(e) => set('fromCode', e.target.value)} placeholder="DEL" className={inputCls} /></div>
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">To code</label><input value={form.toCode} onChange={(e) => set('toCode', e.target.value)} placeholder="JAI" className={inputCls} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Operator</label><input value={form.operator} onChange={(e) => set('operator', e.target.value)} placeholder="RSRTC Volvo" className={inputCls} /></div>
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Bus type</label><input value={form.busType} onChange={(e) => set('busType', e.target.value)} placeholder="AC Sleeper" className={inputCls} /></div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Departure</label><input value={form.departure} onChange={(e) => set('departure', e.target.value)} placeholder="06:00" className={inputCls} /></div>
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Arrival</label><input value={form.arrival} onChange={(e) => set('arrival', e.target.value)} placeholder="11:30" className={inputCls} /></div>
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Duration</label><input value={form.duration} onChange={(e) => set('duration', e.target.value)} placeholder="5h 30m" className={inputCls} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Fare (₹)</label><input value={form.fare} onChange={(e) => set('fare', e.target.value)} placeholder="750" inputMode="numeric" className={inputCls} /></div>
+        <div><label className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Seats available</label><input value={form.seats} onChange={(e) => set('seats', e.target.value)} placeholder="15" inputMode="numeric" className={inputCls} /></div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-gray-300">
+        <input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} className="accent-brand-500" />
+        Active (visible in search results)
+      </label>
+
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button onClick={submit} disabled={saving} className={cn('flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors', saving ? 'bg-gray-800 text-gray-500' : 'bg-brand-500 text-white hover:bg-brand-400')}>{saving ? 'Saving…' : 'Save bus'}</button>
+        <button onClick={onCancel} className="px-4 py-2.5 rounded-lg text-sm border border-gray-800 text-gray-300 hover:bg-gray-800">Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+function BusManager() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [editing, setEditing] = useState(null) // bus object or 'new'
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const res = await AdminService.listBuses(search ? { search } : {})
+    setLoading(false)
+    if (res.ok) setItems(res.data.items)
+  }, [search])
+
+  useEffect(() => { load() }, [load])
+
+  const save = async (payload, setError) => {
+    setSaving(true)
+    const res = editing === 'new'
+      ? await AdminService.createBus(payload)
+      : await AdminService.updateBus(editing.id, payload)
+    setSaving(false)
+    if (res.ok) { setEditing(null); load() }
+    else setError?.(res.data?.message || 'Could not save. Check the fields.')
+  }
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this bus record permanently?')) return
+    const res = await AdminService.deleteBus(id)
+    if (res.ok) load()
+  }
+
+  const toInitial = (b) => ({
+    fromCode: b.fromCode, toCode: b.toCode, operator: b.operator, busType: b.busType,
+    departure: b.departure, arrival: b.arrival, duration: b.duration,
+    fare: String(b.fare ?? ''), seats: String(b.seats ?? ''), active: b.active,
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-3 items-center">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search operator or type…"
+          className="flex-1 min-w-[200px] bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-brand-500" />
+        <button onClick={() => setEditing('new')} className="bg-brand-500 hover:bg-brand-400 text-white text-sm font-medium rounded-lg px-4 py-2.5">+ Add bus</button>
+      </div>
+
+      {editing && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <p className="text-sm font-medium text-white mb-4">{editing === 'new' ? 'New bus record' : `Edit · ${editing.operator}`}</p>
+          <BusForm initial={editing === 'new' ? emptyBus() : toInitial(editing)} onSave={save} onCancel={() => setEditing(null)} saving={saving} />
+        </div>
+      )}
+
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-gray-800">
+              <th className="px-4 py-3 font-medium">Route</th>
+              <th className="px-4 py-3 font-medium">Operator</th>
+              <th className="px-4 py-3 font-medium hidden sm:table-cell">Timing</th>
+              <th className="px-4 py-3 font-medium hidden md:table-cell">Fare · Seats</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-600">Loading…</td></tr>}
+            {!loading && items.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-600">No bus records yet. Add one to get started.</td></tr>}
+            {!loading && items.map((b) => (
+              <tr key={b.id} className="border-b border-gray-800/50 hover:bg-gray-800/40 transition-colors">
+                <td className="px-4 py-3 font-mono text-brand-400 text-xs">{b.fromCode} → {b.toCode}</td>
+                <td className="px-4 py-3"><div className="text-white">{b.operator}</div><div className="text-xs text-gray-500">{b.busType}</div></td>
+                <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">{b.departure}–{b.arrival} <span className="text-gray-600">· {b.duration}</span></td>
+                <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">₹{b.fare?.toLocaleString('en-IN')} · {b.seats} seats</td>
+                <td className="px-4 py-3"><span className={cn('text-[10px] uppercase px-2 py-0.5 rounded', b.active ? 'text-green-700 bg-green-50' : 'text-gray-500 bg-gray-800')}>{b.active ? 'Active' : 'Hidden'}</span></td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <button onClick={() => setEditing(b)} className="text-xs text-gray-300 hover:text-white border border-gray-800 rounded px-2 py-1 mr-1">Edit</button>
+                  <button onClick={() => remove(b.id)} className="text-xs text-red-400 hover:text-red-300 border border-gray-800 rounded px-2 py-1">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ─── Account (change password) ──────────────────────────────────────────
 function AccountPanel({ admin, onLogout }) {
+
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -497,7 +649,9 @@ function Dashboard({ admin, onLogout }) {
         {[
           { key: 'inquiries', label: 'Inquiries' },
           { key: 'trains', label: 'Train records' },
+          { key: 'buses', label: 'Bus records' },
           { key: 'account', label: 'Account' },
+
         ].map((t) => (
           <button
             key={t.key}
@@ -517,6 +671,13 @@ function Dashboard({ admin, onLogout }) {
           <TrainManager />
         </div>
       )}
+
+      {tab === 'buses' && (
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <BusManager />
+        </div>
+      )}
+
 
       {tab === 'account' && (
         <div className="max-w-6xl mx-auto px-6 py-8">

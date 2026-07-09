@@ -5,8 +5,10 @@ import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import cookie from '@fastify/cookie'
 import { inquiryRoutes, trackingRoutes } from './routes/inquiries.js'
+import { searchRoutes } from './routes/search.js'
 
 import { adminRoutes } from './routes/admin.js'
+
 import prisma from './db/client.js'
 import { env, isProduction, allowedOrigins } from './lib/env.js'
 import { startRetentionJob } from './lib/retention.js'
@@ -136,7 +138,24 @@ async function main() {
     await scoped.register(trackingRoutes)
   })
 
+  // Public journey search (DB-backed live inventory). Read-only and cheap, so
+  // a generous cap (60 per minute per IP) keeps the search UX snappy.
+  await app.register(async (scoped) => {
+    await scoped.register(rateLimit, {
+      max: 60,
+      timeWindow: '1 minute',
+      keyGenerator: (req) => req.ip,
+      errorResponseBuilder: () => ({
+        success: false,
+        error: 'rate_limited',
+        message: 'Too many searches. Please try again in a moment.',
+      }),
+    })
+    await scoped.register(searchRoutes, { prefix: '/api' })
+  })
+
   // ─── Admin API (obscure prefix + real auth) ─────────────────────────
+
 
   // Mounted at /api/<ADMIN_PATH_SECRET>. Login is rate-limited to slow
   // brute-force; everything else requires a valid session cookie.

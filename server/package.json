@@ -13,6 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:trains": "tsx src/db/seedTrains.ts",
+    "db:seed:buses": "tsx src/db/seedBuses.ts",
+
     "db:clean": "tsx src/db/cleanTestData.ts",
     "db:studio": "prisma studio"
 

@@ -60,7 +60,19 @@ export const AdminService = {
   createTrain: (body) => request('/trains', { method: 'POST', body }),
   updateTrain: (id, body) => request(`/trains/${id}`, { method: 'PATCH', body }),
   deleteTrain: (id) => request(`/trains/${id}`, { method: 'DELETE' }),
+
+  // Bus records (live inventory)
+  listBuses: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null),
+    ).toString()
+    return request(`/buses${qs ? `?${qs}` : ''}`)
+  },
+  createBus: (body) => request('/buses', { method: 'POST', body }),
+  updateBus: (id, body) => request(`/buses/${id}`, { method: 'PATCH', body }),
+  deleteBus: (id) => request(`/buses/${id}`, { method: 'DELETE' }),
 }
+
 
 
 export default AdminService

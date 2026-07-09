@@ -183,8 +183,54 @@ export const trainRecordUpdateSchema = z
 
 export type TrainRecordUpdateInput = z.infer<typeof trainRecordUpdateSchema>
 
+// ─── Bus record management (admin) ──────────────────────────────────────────
+
+export const busRecordSchema = z
+  .object({
+    fromCode: codeSchema,
+    toCode: codeSchema,
+    operator: text(2, 80),
+    busType: text(2, 40),
+    departure: timeSchema,
+    arrival: timeSchema,
+    duration: text(1, 30),
+    fare: z.coerce.number().int().min(0).max(1_000_000),
+    seats: z.coerce.number().int().min(0).max(200).optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
+  .refine((v) => v.fromCode !== v.toCode, { message: 'From and To cannot be the same' })
+
+export type BusRecordInput = z.infer<typeof busRecordSchema>
+
+/** Partial update for an existing bus record. */
+export const busRecordUpdateSchema = z
+  .object({
+    fromCode: codeSchema.optional(),
+    toCode: codeSchema.optional(),
+    operator: text(2, 80).optional(),
+    busType: text(2, 40).optional(),
+    departure: timeSchema.optional(),
+    arrival: timeSchema.optional(),
+    duration: text(1, 30).optional(),
+    fare: z.coerce.number().int().min(0).max(1_000_000).optional(),
+    seats: z.coerce.number().int().min(0).max(200).optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
+  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to update' })
+
+export type BusRecordUpdateInput = z.infer<typeof busRecordUpdateSchema>
+
+/** Public search query — from/to city codes. */
+export const searchQuerySchema = z.object({
+  from: codeSchema,
+  to: codeSchema,
+})
+
 
 /** Escape a string for safe interpolation into HTML email bodies. */
+
 export function escapeHtml(input: unknown): string {
   return String(input ?? '')
     .replace(/&/g, '&amp;')
