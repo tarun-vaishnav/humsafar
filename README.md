@@ -80,19 +80,6 @@ Nothing feels static.
 
 ---
 
-# 🖼 Gallery
-
-<div align="center">
-
-| Hero | Destinations |
-|------|-------------|
-| ![](./screenshots/home.png) | ![](./screenshots/destination.png) |
-
-| Packages | Footer |
-|------|-------------|
-| ![](./screenshots/packages.png) | ![](./screenshots/footer.png) |
-
-</div>
 
 ---
 
