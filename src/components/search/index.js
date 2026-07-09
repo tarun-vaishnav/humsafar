@@ -1,0 +1,1 @@
+export { SearchJourneys } from './SearchJourneys'

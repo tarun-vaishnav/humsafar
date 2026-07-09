@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Booking Inquiry ────────────────────────────────────────────────────────
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Public tracking reference (short, human-friendly, unguessable enough
+  // when combined with the customer's email as a second factor).
+  reference String @unique
+
+  // Customer contact
+  fullName             String
+  email                String
+  phone                String
+  passengers           Int      @default(1)
+  specialRequest       String?
+  preferredContactTime String?
+
+  // Abuse / audit tracking (admin-only visibility). Personal data — disclosed
+  // in the privacy notice on the form.
+  ipAddress String?
+  userAgent String?
+  country   String?
+  city      String?
+
+
+  // Selected journey (nullable — customer may inquire without selecting)
+  journeyType   String?  // "train" | "bus"
+  journeyName   String?  // e.g. "Ajmer Shatabdi"
+  journeyNumber String?  // e.g. "12015"
+  journeyClass  String?  // e.g. "3AC"
+  journeyFare   Int?     // estimated fare in INR
+  fromCity      String?
+  toCity        String?
+  travelDate    String?
+  departure     String?
+  arrival       String?
+
+  // Admin workflow
+  status   InquiryStatus @default(NEW)
+  priority Priority      @default(LOW)
+  notes    String?
+  deleted  Boolean       @default(false)
+
+  statusHistory StatusHistory[]
+  activityLog   ActivityLog[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([email])
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  PLANNING
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ─── Status History ─────────────────────────────────────────────────────────
+
+model StatusHistory {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  status    InquiryStatus
+  note      String?
+
+  inquiry   Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiryId String
+
+  @@index([inquiryId])
+}
+
+// ─── Train Records (admin-managed "live" inventory) ─────────────────────────
+
+model TrainRecord {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Route key parts (city ids/codes, e.g. "DEL" → "JAI")
+  fromCode String
+  toCode   String
+
+  name      String // e.g. "Ajmer Shatabdi"
+  number    String // e.g. "12015"
+  departure String // "06:10"
+  arrival   String // "10:40"
+  duration  String // "4h 30m"
+
+  // Classes + fares stored as JSON: [{ type, fare, availability }]
+  classes Json
+
+  active Boolean @default(true)
+
+  @@index([fromCode, toCode])
+  @@index([active])
+}
+
+// ─── Admin Users ────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+
+  activityLog ActivityLog[]
+}
+
+
+// ─── Activity Log ───────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  action    String
+  details   String?
+
+  admin   AdminUser? @relation(fields: [adminId], references: [id])
+  adminId String?
+
+  inquiry   Inquiry? @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiryId String?
+
+  @@index([inquiryId])
+  @@index([adminId])
+}
