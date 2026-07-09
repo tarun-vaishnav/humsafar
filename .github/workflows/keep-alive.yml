@@ -1,0 +1,44 @@
+name: Keep API Awake
+
+# Render's free tier spins the API down after ~15 minutes of inactivity, which
+# makes the next real request slow (cold start ~30-50s). This scheduled job
+# pings the health endpoint every ~10 minutes so the service never sleeps.
+#
+# Runs entirely on GitHub's infrastructure — nothing to host yourself.
+# Note: GitHub may delay scheduled runs by a few minutes under load, and will
+# auto-disable the schedule if the repo has zero activity for 60 days (just
+# re-enable it from the Actions tab if that ever happens).
+
+on:
+  schedule:
+    # Every 10 minutes. (Render sleeps at 15 min idle; 10 gives a safe margin.)
+    - cron: '*/10 * * * *'
+  # Lets you trigger it manually from the Actions tab to test.
+  workflow_dispatch:
+
+# If a previous ping is somehow still running, don't pile up.
+concurrency:
+  group: keep-alive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping API health endpoint
+        run: |
+          URL="https://humsafar-627e.onrender.com/api/health"
+          echo "Pinging $URL"
+          # Retry up to 5 times (cold start can take ~50s to wake the dyno).
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 "$URL" || echo "000")
+            echo "Attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "API is awake ✅"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "API did not return 200 after retries ❌"
+          exit 1
