@@ -1,4 +1,10 @@
 node_modules
 dist
-.env
 *.log
+
+# Environment / secrets — NEVER commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
