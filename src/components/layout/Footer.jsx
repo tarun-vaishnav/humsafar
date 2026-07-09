@@ -1,5 +1,7 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { gsap } from '@animations/gsap'
+import { Modal } from '@components/ui/Modal'
+
 
 /**
  * Site footer — an editorial "departure board" closing to the page.
@@ -65,8 +67,18 @@ const TRUST = [
 
 export const Footer = () => {
   const ref = useRef(null)
+  // Holds the label of whatever "not live yet" link was clicked (null = closed).
+  const [comingSoon, setComingSoon] = useState(null)
+
+  // Links that don't point anywhere real yet (social handles, legal pages) all
+  // funnel through a friendly "coming soon" modal instead of a dead `#`.
+  const handlePlaceholder = (label) => (e) => {
+    e.preventDefault()
+    setComingSoon(label)
+  }
 
   useEffect(() => {
+
     const el = ref.current
     if (!el) return
     const tweens = []
@@ -212,8 +224,10 @@ export const Footer = () => {
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
+                  onClick={handlePlaceholder(s.label)}
                   className="group grid place-items-center h-10 w-10 rounded-full border border-white/20 text-white/80 transition-all duration-500 hover:border-brand-500 hover:text-white hover:bg-brand-500/30 hover:-translate-y-1"
                 >
+
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="transition-transform duration-500 group-hover:scale-110"><path d={s.path} /></svg>
                 </a>
               ))}
@@ -226,7 +240,12 @@ export const Footer = () => {
               <ul className="space-y-3">
                 {group.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="group inline-flex items-center gap-1.5 text-sm text-white/75 font-light transition-colors duration-300 hover:text-white">
+                    <a
+                      href={link.href}
+                      onClick={link.href === '#' ? handlePlaceholder(link.label) : undefined}
+                      className="group inline-flex items-center gap-1.5 text-sm text-white/75 font-light transition-colors duration-300 hover:text-white"
+                    >
+
                       <span className="h-px w-0 bg-brand-500 transition-all duration-300 group-hover:w-4" />
                       <span className="transition-transform duration-300 group-hover:translate-x-0.5">{link.label}</span>
                     </a>
@@ -247,8 +266,37 @@ export const Footer = () => {
           </p>
         </div>
       </div>
+
+      {/* "Coming soon" modal for links that aren't live yet (socials, legal). */}
+      <Modal
+        open={comingSoon !== null}
+        onClose={() => setComingSoon(null)}
+        size="sm"
+        title="Coming soon"
+      >
+        <div className="text-center">
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-500/20 to-golden-500/20 text-brand-500">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          </div>
+          <p className="text-base text-content-secondary font-light leading-relaxed">
+            {comingSoon ? <span className="font-medium text-content-primary">{comingSoon}</span> : 'This'}
+            {' '}We are not on this platform currently, Soon we'll be here!
+          </p>
+          <button
+            onClick={() => setComingSoon(null)}
+            className="mt-7 w-full rounded-full bg-brand-500 py-3 text-sm font-medium uppercase tracking-wider text-white transition-colors hover:bg-brand-400"
+          >
+            Got it
+          </button>
+        </div>
+      </Modal>
     </footer>
   )
 }
 
 export default Footer
+
+

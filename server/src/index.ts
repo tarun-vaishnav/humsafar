@@ -142,20 +142,25 @@ async function main() {
   // brute-force; everything else requires a valid session cookie.
   await app.register(
     async (scoped) => {
+      // Generous ceiling for an *authenticated* dashboard session — a single
+      // admin easily fires many reads (list, detail, analytics, trains) while
+      // working. The strict brute-force cap is applied per-route on /login only
+      // (see adminRoutes), so normal use never trips this global limit.
       await scoped.register(rateLimit, {
-        max: 10,
+        max: 300,
         timeWindow: '5 minutes',
         keyGenerator: (req) => req.ip,
         errorResponseBuilder: () => ({
           success: false,
           error: 'rate_limited',
-          message: 'Too many attempts. Please try again later.',
+          message: 'Too many requests. Please slow down and try again shortly.',
         }),
       })
       await scoped.register(adminRoutes)
     },
     { prefix: `/api/${env.ADMIN_PATH_SECRET}` },
   )
+
 
   // ─── Error handler (generic, no leaks) ──────────────────────────────
   app.setErrorHandler((error: FastifyError, req, reply) => {

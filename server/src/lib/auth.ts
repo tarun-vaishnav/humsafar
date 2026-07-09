@@ -45,21 +45,39 @@ export function verifyAdminToken(token: string): AdminTokenPayload | null {
   }
 }
 
-/** Set the session cookie on a reply. */
+/**
+ * Set the session cookie on a reply.
+ *
+ * Cross-site note: the SPA (Vercel) and API (Render) live on different
+ * registrable domains, so the browser treats admin API calls as *cross-site*.
+ * A `SameSite=Strict` cookie is never attached to cross-site requests, which
+ * would silently break every authenticated call. In production we therefore
+ * use `SameSite=None; Secure` so the cookie travels with credentialed fetches.
+ * CSRF is still mitigated: the cookie is httpOnly, CORS is locked to an
+ * allow-list, and all state-changing routes use JSON/PATCH/DELETE (non-simple
+ * requests) which force a CORS preflight that untrusted origins fail.
+ * Locally (same-site over http) we keep the stricter `Lax`.
+ */
+const cookieOptions = () =>
+  ({
+    httpOnly: true,
+    secure: isProduction, // required by browsers when SameSite=None
+    sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
+    path: '/',
+  }) as const
+
 export function setAuthCookie(reply: FastifyReply, token: string): void {
   reply.setCookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict',
-    path: '/',
+    ...cookieOptions(),
     maxAge: 60 * 60 * 8, // 8h
   })
 }
 
-/** Clear the session cookie. */
+/** Clear the session cookie. Attributes must match those used when setting. */
 export function clearAuthCookie(reply: FastifyReply): void {
-  reply.clearCookie(COOKIE_NAME, { path: '/' })
+  reply.clearCookie(COOKIE_NAME, cookieOptions())
 }
+
 
 /**
  * Fastify preHandler that rejects unauthenticated requests. On success it

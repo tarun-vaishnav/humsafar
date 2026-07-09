@@ -28,7 +28,22 @@ import {
  */
 export async function adminRoutes(app: FastifyInstance) {
   // ─── Login ────────────────────────────────────────────────────────────
-  app.post('/login', async (request, reply) => {
+  // Tight per-route brute-force cap (overrides the generous admin-scope limit):
+  // 10 attempts per 5 min per IP. Authenticated routes are unaffected.
+  app.post('/login', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '5 minutes',
+        errorResponseBuilder: () => ({
+          success: false,
+          error: 'rate_limited',
+          message: 'Too many login attempts. Please try again in a few minutes.',
+        }),
+      },
+    },
+  }, async (request, reply) => {
+
     const parsed = loginSchema.safeParse(request.body ?? {})
     if (!parsed.success) {
       return reply.status(400).send({ success: false, error: 'invalid_credentials' })
