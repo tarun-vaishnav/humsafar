@@ -158,42 +158,54 @@ export const RoutesSection = () => {
                   onError={handleImgError}
                   className="dest-img absolute inset-0 h-full w-full object-cover transition-transform duration-700 will-change-transform"
                 />
-                {/* Readability scrim */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" aria-hidden="true" />
+                {/* Cinematic readability scrim — deep, smooth bottom fade so
+                    white text stays legible on any photo, even bright ones. */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/5" aria-hidden="true" />
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent" aria-hidden="true" />
 
                 {/* Content */}
-                <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
-                  <span className="inline-flex w-fit items-center gap-2 mb-3 rounded-full bg-white/15 backdrop-blur-md px-3 py-1 text-[0.65rem] uppercase tracking-widest text-white/90 font-semibold border border-white/20">
+                <div className="relative flex h-full flex-col justify-end p-5 md:p-8">
+                  <span className="inline-flex w-fit items-center gap-1.5 mb-3 rounded-full bg-black/30 backdrop-blur-md px-3 py-1 text-[0.62rem] uppercase tracking-[0.18em] text-white font-semibold border border-white/25 shadow-sm">
+                    <span className="h-1 w-1 rounded-full bg-gold-300" />
                     {dest.epithet}
                   </span>
-                  <h3 className={`font-display font-light text-white leading-none tracking-tight ${
-                    i === 0 ? 'text-5xl md:text-7xl' : 'text-4xl md:text-5xl'
+                  <h3 className={`font-display font-light text-white leading-[0.95] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.5)] ${
+                    i === 0 ? 'text-5xl md:text-7xl' : 'text-[2.5rem] md:text-5xl'
                   }`}>
                     {dest.name}
                   </h3>
                   {i === 0 && (
-                    <p className="mt-4 max-w-md text-sm md:text-base text-white/75 font-light leading-relaxed">
+                    <p className="mt-4 max-w-md text-sm md:text-base text-white/80 font-light leading-relaxed [text-shadow:0_1px_10px_rgba(0,0,0,0.5)]">
                       {dest.line}
                     </p>
                   )}
-                  <div className="mt-5 flex items-center justify-between gap-4">
-                    <span className="text-xs md:text-sm text-white/80 font-medium">{dest.route}</span>
-                    {/* Enquire now — the ONLY clickable element. Always visible on
-                        touch, reveals on hover for pointer devices. */}
+
+                  {/* Premium glass info bar — a frosted surface that anchors the
+                      route + CTA so they read perfectly on mobile, any image. */}
+                  <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-black/35 backdrop-blur-xl border border-white/15 p-2 pl-4 shadow-[0_8px_28px_-10px_rgba(0,0,0,0.7)]">
+                    <span className="flex flex-col leading-tight min-w-0">
+                      <span className="text-[0.7rem] text-white/70 font-medium truncate">{dest.from} → {dest.to}</span>
+                      <span className="text-sm md:text-base text-white font-semibold tracking-tight">
+                        {dest.route.split('from ')[1]
+                          ? <>from <span className="text-gold-200">{dest.route.split('from ')[1]}</span></>
+                          : dest.route}
+                      </span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => prefillSearch(dest.from, dest.to)}
                       aria-label={`Plan a trip to ${dest.name} — ${dest.from} to ${dest.to}`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-1.5 text-[0.7rem] uppercase tracking-wider font-semibold text-content-primary shadow-sm transition-all duration-500 opacity-100 translate-x-0 sm:opacity-0 sm:translate-x-2 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 hover:bg-brand-500 hover:text-white focus-visible:opacity-100 focus-visible:translate-x-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                      className="group/cta inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-[0.7rem] uppercase tracking-wider font-bold text-content-primary shadow-md transition-all duration-300 hover:bg-brand-500 hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                     >
-                      Enquire now
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                      Enquire
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="transition-transform duration-300 group-hover/cta:translate-x-0.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
                   </div>
                 </div>
 
                 {/* Hover ring */}
                 <div className="pointer-events-none absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/0 transition-all duration-500 group-hover:ring-white/25" aria-hidden="true" />
+
               </div>
 
             ))}
